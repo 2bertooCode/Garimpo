@@ -1,0 +1,14 @@
+# Dependências compiladas
+node_modules/
+dist/
+
+# Banco de dados local (para não sobrescrever o seu banco local na nuvem)
+src/server/db.json
+
+# Variáveis de ambiente secretas
+.env
+.env.local
+
+# Arquivos de sistema
+.DS_Store
+Thumbs.db
