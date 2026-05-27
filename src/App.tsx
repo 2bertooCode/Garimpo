@@ -95,7 +95,7 @@ function App() {
   const [isSyncing, setIsSyncing] = useState(false);
   const [syncMessage, setSyncMessage] = useState<string | null>(null);
   
-  const syncPollTimer = useRef<NodeJS.Timeout | null>(null);
+  const syncPollTimer = useRef<any>(null);
 
   // Fetch initial data
   const fetchData = async () => {
