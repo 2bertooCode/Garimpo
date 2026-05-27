@@ -42,26 +42,26 @@ export const Settings: React.FC<SettingsProps> = ({ settings, onSaveSettings }) 
   };
 
   return (
-    <div className="glass-panel p-6 mb-8">
+    <div className="spotify-card p-6 mb-6">
       <div className="flex items-center gap-3 mb-6">
-        <div className="p-2 bg-purple-500/10 border border-purple-500/20 text-purple-400 rounded-xl">
+        <div className="p-2.5 bg-green-500/10 border border-green-500/20 text-green-400 rounded-xl">
           <SettingsIcon size={20} />
         </div>
         <div>
-          <h2 className="text-xl font-bold text-slate-100">Painel de Configuração do Agente</h2>
-          <p className="text-xs text-slate-400">Configure as credenciais e regras de IA de forma segura.</p>
+          <h2 className="text-xl font-extrabold text-white">Configurações de Inteligência Artificial</h2>
+          <p className="text-xs text-slate-400">Configure suas credenciais e regras de síntese do Gemini com total privacidade.</p>
         </div>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-5">
         {/* Gemini API Key */}
         <div className="flex flex-col gap-1.5">
-          <label className="text-xs font-semibold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
+          <label className="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
             Chave de API do Gemini (Google AI Studio)
             <span className="group relative cursor-pointer text-slate-500 hover:text-slate-300">
               <HelpCircle size={14} />
               <span className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 w-64 p-2 bg-slate-950/95 border border-slate-800 text-[10px] text-slate-300 rounded-lg opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity z-10 font-normal normal-case leading-normal shadow-xl">
-                Obtenha uma chave gratuita no Google AI Studio (aistudio.google.com). Ela ficará salva estritamente no seu computador local.
+                Obtenha uma chave gratuita no Google AI Studio (aistudio.google.com). Ela ficará salva de forma segura apenas na sua nuvem.
               </span>
             </span>
           </label>
@@ -71,7 +71,7 @@ export const Settings: React.FC<SettingsProps> = ({ settings, onSaveSettings }) 
               placeholder="Cole sua API Key aqui (AIzaSy...)"
               value={apiKey}
               onChange={(e) => setApiKey(e.target.value)}
-              className="form-input w-full pr-12 font-mono text-sm"
+              className="spotify-input w-full pr-12 font-mono text-sm"
               id="settings-api-key"
             />
             <button
@@ -85,51 +85,51 @@ export const Settings: React.FC<SettingsProps> = ({ settings, onSaveSettings }) 
           </div>
         </div>
 
-        {/* Hour Input & Prompt Customization side-by-side or stacked */}
+        {/* Hour Input & Prompt Customization */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-5">
           {/* Cron hour */}
           <div className="flex flex-col gap-1.5 md:col-span-1">
-            <label className="text-xs font-semibold text-slate-300 uppercase tracking-wider">
+            <label className="text-xs font-bold text-slate-300 uppercase tracking-wider">
               Horário do Briefing
             </label>
             <input
               type="time"
               value={hour}
               onChange={(e) => setHour(e.target.value)}
-              className="form-input w-full font-semibold text-center text-base"
+              className="spotify-input w-full font-bold text-center text-base"
               id="settings-time-input"
             />
-            <span className="text-[10px] text-slate-400">
-              O agente acordará neste horário para compilar as novidades.
+            <span className="text-[10px] text-slate-400 leading-tight">
+              O agente acordará neste horário para buscar os vídeos e fazer a síntese.
             </span>
           </div>
 
           {/* Prompt customization */}
           <div className="flex flex-col gap-1.5 md:col-span-3">
-            <label className="text-xs font-semibold text-slate-300 uppercase tracking-wider">
-              Diretrizes de Resumo (Prompt Customizado)
+            <label className="text-xs font-bold text-slate-300 uppercase tracking-wider">
+              Prompt Personalizado do Gemini
             </label>
             <textarea
               placeholder="Ex: Foque nos pontos tecnológicos, escreva com tom animado e destaque exemplos práticos..."
               value={prompt}
               onChange={(e) => setPrompt(e.target.value)}
               rows={3}
-              className="form-input w-full resize-y text-sm leading-relaxed"
+              className="spotify-input w-full resize-y text-sm leading-relaxed"
               id="settings-prompt-customization"
             />
             <span className="text-[10px] text-slate-400">
-              Instruções extras enviadas à IA para moldar a formatação e foco do resumo.
+              Instruções extras passadas ao modelo Gemini para personalizar a estrutura do resumo.
             </span>
           </div>
         </div>
 
         {/* Save button & Alert */}
-        <div className="flex items-center justify-between pt-2 border-t border-slate-800">
+        <div className="flex items-center justify-between pt-4 border-t border-slate-800">
           <div className="flex-1">
             {showSavedAlert && (
-              <div className="flex items-center gap-2 text-emerald-400 text-sm animate-fade-in">
+              <div className="flex items-center gap-2 text-green-400 text-sm animate-fade-in">
                 <CheckCircle size={16} />
-                <span>Configurações salvas e aplicadas!</span>
+                <span>Configurações atualizadas com sucesso!</span>
               </div>
             )}
           </div>
@@ -137,7 +137,7 @@ export const Settings: React.FC<SettingsProps> = ({ settings, onSaveSettings }) 
           <button
             type="submit"
             disabled={isSaving}
-            className="btn-primary flex items-center gap-2 h-11"
+            className="btn-spotify flex items-center gap-2 h-11"
             id="save-settings-btn"
           >
             {isSaving ? (
@@ -148,7 +148,7 @@ export const Settings: React.FC<SettingsProps> = ({ settings, onSaveSettings }) 
             ) : (
               <>
                 <Save size={18} />
-                <span>Salvar Alterações</span>
+                <span>Salvar Configurações</span>
               </>
             )}
           </button>

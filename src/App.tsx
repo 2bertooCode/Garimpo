@@ -4,14 +4,18 @@ import { ChannelManager } from './components/ChannelManager';
 import { Settings } from './components/Settings';
 import { VideoCard } from './components/VideoCard';
 import { 
-  Tv2, 
+  Home, 
   Settings as SettingsIcon, 
-  RefreshCw, 
+  Youtube, 
   Coffee, 
   Sparkles,
+  Play,
+  RotateCw,
+  Clock,
+  Eye,
   Info,
-  ChevronRight,
-  TrendingUp
+  Calendar,
+  XCircle
 } from 'lucide-react';
 
 interface Channel {
@@ -61,8 +65,7 @@ const groupSummariesByDay = (summariesList: Summary[]) => {
       } else {
         dayLabel = pubDate.toLocaleDateString('pt-BR', {
           day: 'numeric',
-          month: 'long',
-          year: 'numeric'
+          month: 'long'
         });
       }
       
@@ -81,7 +84,7 @@ const groupSummariesByDay = (summariesList: Summary[]) => {
 };
 
 function App() {
-  const [activeTab, setActiveTab] = useState<'feed' | 'control'>('feed');
+  const [activeTab, setActiveTab] = useState<'feed' | 'channels' | 'settings'>('feed');
   
   const [channels, setChannels] = useState<Channel[]>([]);
   const [summaries, setSummaries] = useState<Summary[]>([]);
@@ -94,6 +97,7 @@ function App() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSyncing, setIsSyncing] = useState(false);
   const [syncMessage, setSyncMessage] = useState<string | null>(null);
+  const [activeChannelFilter, setActiveChannelFilter] = useState<string | null>(null);
   
   const syncPollTimer = useRef<any>(null);
 
@@ -123,13 +127,11 @@ function App() {
       setIsSyncing(res.isSyncing);
       
       if (!res.isSyncing) {
-        // Finished syncing! Clear timer and refresh feeds
         if (syncPollTimer.current) {
           clearInterval(syncPollTimer.current);
           syncPollTimer.current = null;
         }
-        setSyncMessage('Sincronização concluída com sucesso!');
-        setTimeout(() => setSyncMessage(null), 4000);
+        setSyncMessage(null);
         fetchData();
       }
     } catch (err) {
@@ -168,7 +170,6 @@ function App() {
       throw new Error(data.error || 'Erro ao adicionar canal.');
     }
     
-    // Refresh channels list
     const updatedChannels = await fetch('/api/channels').then(r => r.json());
     setChannels(updatedChannels);
   };
@@ -183,6 +184,9 @@ function App() {
     }
 
     setChannels(channels.filter(c => c.id !== id));
+    if (activeChannelFilter === id) {
+      setActiveChannelFilter(null);
+    }
   };
 
   const handleSaveSettings = async (updatedSettings: SettingsData) => {
@@ -203,220 +207,358 @@ function App() {
     if (isSyncing) return;
     
     setIsSyncing(true);
-    setSyncMessage('Agente acordando... Iniciando varredura nos feeds do YouTube.');
+    setSyncMessage('Buscando canais no YouTube...');
     
     try {
       await fetch('/api/sync', { method: 'POST' });
-      // Start polling
       if (syncPollTimer.current) clearInterval(syncPollTimer.current);
       syncPollTimer.current = setInterval(checkSyncStatus, 3000);
     } catch (err) {
       setIsSyncing(false);
-      setSyncMessage('Falha ao disparar sincronização.');
+      setSyncMessage('Falha na sincronização.');
       setTimeout(() => setSyncMessage(null), 3000);
     }
   };
 
-  // Group and calculate statistics
-  const groupedSummaries = groupSummariesByDay(summaries);
+  // Toggle filter by channel (Spotify Playlist effect)
+  const handleSelectChannelFilter = (channelId: string) => {
+    if (activeChannelFilter === channelId) {
+      setActiveChannelFilter(null); // Clear filter
+    } else {
+      setActiveChannelFilter(channelId);
+      setActiveTab('feed'); // Go back to feed to see results
+    }
+  };
+
+  // Calculations
+  const filteredSummaries = activeChannelFilter 
+    ? summaries.filter(s => s.channelId === activeChannelFilter)
+    : summaries;
+
+  const groupedSummaries = groupSummariesByDay(filteredSummaries);
   const totalTimeSaved = summaries.reduce((acc, curr) => acc + (curr.timeSavedMinutes || 0), 0);
+  
+  // Track details for bottom player (last generated summary or currently syncing info)
+  const latestSummary = summaries[0];
+  const activeFilterName = activeChannelFilter 
+    ? channels.find(c => c.id === activeChannelFilter)?.name 
+    : null;
 
   return (
-    <div className="max-w-6xl mx-auto px-4 py-8">
-      {/* Premium Header */}
-      <header className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8 border-b border-slate-800 pb-6">
-        <div className="flex items-center gap-3">
-          <div className="p-3 bg-gradient-to-tr from-purple-600 to-cyan-500 rounded-2xl shadow-lg shadow-purple-500/20 text-white animate-pulse-glow">
-            <Coffee size={28} />
-          </div>
-          <div>
-            <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight flex items-center gap-2">
-              <span className="text-gradient">Morning Brew</span>
-              <span className="text-xs bg-slate-800 text-slate-400 font-normal px-2.5 py-0.5 rounded-full border border-slate-700/50">
-                Agent v1.0
+    <div className="flex flex-col h-screen bg-black text-white select-none">
+      
+      {/* Main Container */}
+      <div className="spotify-layout">
+        
+        {/* Sidebar (Left Pane) */}
+        <aside className="spotify-sidebar">
+          {/* Nav Card */}
+          <div className="spotify-sidebar-card">
+            {/* Logo */}
+            <div className="flex items-center gap-3 px-2 mb-2">
+              <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-[#1DB954] to-cyan-400 flex items-center justify-center text-black">
+                <Coffee size={18} strokeWidth={2.5} />
+              </div>
+              <span className="font-extrabold text-white text-base tracking-tight">
+                Morning Brew
               </span>
-            </h1>
-            <p className="text-sm text-slate-400">Seu resumo diário de inteligência a partir do YouTube</p>
-          </div>
-        </div>
-
-        {/* Tab Navigation & Manual Sync */}
-        <div className="flex items-center gap-3 self-start md:self-center">
-          <div className="bg-slate-900/80 p-1 border border-slate-800 rounded-xl flex gap-1">
-            <button
-              onClick={() => setActiveTab('feed')}
-              className={`px-4 py-2 text-xs font-bold rounded-lg transition-all flex items-center gap-1.5 ${
-                activeTab === 'feed'
-                  ? 'bg-purple-600 text-white shadow-md'
-                  : 'text-slate-400 hover:text-slate-200'
-              }`}
-              id="feed-tab-btn"
-            >
-              <Tv2 size={14} />
-              <span>Resumos</span>
-            </button>
-            <button
-              onClick={() => setActiveTab('control')}
-              className={`px-4 py-2 text-xs font-bold rounded-lg transition-all flex items-center gap-1.5 ${
-                activeTab === 'control'
-                  ? 'bg-purple-600 text-white shadow-md'
-                  : 'text-slate-400 hover:text-slate-200'
-              }`}
-              id="control-tab-btn"
-            >
-              <SettingsIcon size={14} />
-              <span>Painel</span>
-            </button>
-          </div>
-
-          <button
-            onClick={handleTriggerSync}
-            disabled={isSyncing || isLoading}
-            className={`btn-primary flex items-center gap-2 text-xs font-bold h-[38px] ${
-              isSyncing ? 'animate-pulse opacity-75' : ''
-            }`}
-            id="sync-now-btn"
-          >
-            <RefreshCw className={isSyncing ? 'animate-spin' : ''} size={14} />
-            <span>{isSyncing ? 'Sincronizando...' : 'Sincronizar Canais'}</span>
-          </button>
-        </div>
-      </header>
-
-      {/* Sync Status Banner */}
-      {syncMessage && (
-        <div className="mb-6 p-4 glass-panel border-cyan-500/20 bg-cyan-950/10 text-cyan-300 flex items-center justify-between animate-fade-in shadow-lg">
-          <div className="flex items-center gap-3 min-w-0">
-            <div className={`p-1.5 rounded-lg shrink-0 ${isSyncing ? 'bg-cyan-500/10 text-cyan-400 animate-spin' : 'bg-emerald-500/10 text-emerald-400'}`}>
-              {isSyncing ? <RefreshCw size={16} /> : <Sparkles size={16} />}
             </div>
-            <p className="text-xs font-medium truncate">{syncMessage}</p>
-          </div>
-          {isSyncing && (
-            <span className="text-[10px] uppercase font-bold text-cyan-400 shrink-0 bg-cyan-500/10 border border-cyan-500/20 px-2 py-0.5 rounded ml-2 animate-pulse">
-              Executando...
-            </span>
-          )}
-        </div>
-      )}
 
-      {/* Loading Skeleton */}
-      {isLoading ? (
-        <div className="space-y-6">
-          {/* Skeleton stats */}
-          <div className="grid grid-cols-4 gap-4">
-            {[1, 2, 3, 4].map(i => (
-              <div key={i} className="glass-panel p-5 h-24 skeleton-shimmer"></div>
-            ))}
-          </div>
-          {/* Skeleton card */}
-          <div className="glass-panel p-6 h-48 skeleton-shimmer"></div>
-        </div>
-      ) : (
-        <>
-          {/* Dashboard Tab: Video Briefings grouped by Day */}
-          {activeTab === 'feed' && (
-            <div>
-              {/* Stats overview */}
-              <Stats
-                channelsCount={channels.length}
-                summariesCount={summaries.length}
-                timeSaved={totalTimeSaved}
-                scheduleHour={settings.scheduleHour}
-              />
+            {/* Nav Items */}
+            <button
+              onClick={() => { setActiveTab('feed'); }}
+              className={`spotify-sidebar-nav-item ${activeTab === 'feed' && !activeChannelFilter ? 'active' : ''}`}
+            >
+              <Home size={20} />
+              <span>Início</span>
+            </button>
 
-              {/* Feed lists */}
-              {summaries.length === 0 ? (
-                <div className="glass-panel p-12 text-center border-dashed border-slate-700/60 my-10 bg-slate-900/10">
-                  <div className="p-4 bg-purple-500/5 text-purple-400 inline-block rounded-full border border-purple-500/10 mb-4 animate-bounce">
-                    <Coffee size={40} />
-                  </div>
-                  <h3 className="text-xl font-bold text-slate-200">Sua mesa de café da manhã está vazia!</h3>
-                  <p className="text-sm text-slate-400 mt-2 max-w-md mx-auto leading-relaxed">
-                    Nenhum resumo foi gerado ainda. Insira canais do YouTube e sua chave do Gemini na aba 
-                    <strong> Painel</strong> e clique em <strong>Sincronizar Canais</strong> para receber seus primeiros resumos!
-                  </p>
-                  <button
-                    onClick={() => setActiveTab('control')}
-                    className="btn-secondary text-xs mt-6"
+            <button
+              onClick={() => { setActiveTab('channels'); }}
+              className={`spotify-sidebar-nav-item ${activeTab === 'channels' ? 'active' : ''}`}
+            >
+              <Youtube size={20} />
+              <span>Gerenciar Canais</span>
+            </button>
+
+            <button
+              onClick={() => { setActiveTab('settings'); }}
+              className={`spotify-sidebar-nav-item ${activeTab === 'settings' ? 'active' : ''}`}
+            >
+              <SettingsIcon size={20} />
+              <span>Ajustes da IA</span>
+            </button>
+          </div>
+
+          {/* Subscribed Channels List (Spotify "Your Library") */}
+          <div className="spotify-library">
+            <div className="flex items-center gap-2 mb-4 text-xs font-extrabold text-slate-400 uppercase tracking-widest px-2">
+              <Youtube size={14} className="text-[#1DB954]" />
+              <span>Sua Biblioteca</span>
+            </div>
+            
+            {channels.length === 0 ? (
+              <div className="px-2 py-6 text-center text-xs text-slate-500">
+                Sem canais cadastrados.
+              </div>
+            ) : (
+              <div className="space-y-1.5 overflow-y-auto max-h-[calc(100vh-340px)]">
+                {channels.map(channel => (
+                  <div
+                    key={channel.id}
+                    onClick={() => handleSelectChannelFilter(channel.id)}
+                    className={`spotify-library-item ${
+                      activeChannelFilter === channel.id ? 'active border-l-4 border-[#1DB954]' : ''
+                    }`}
+                    title={`Filtrar canal: ${channel.name}`}
                   >
-                    Ir para o Painel
-                  </button>
-                </div>
-              ) : (
-                <div className="relative pl-0 sm:pl-8 border-none sm:border-l sm:border-slate-800/80 space-y-12">
-                  {Object.keys(groupedSummaries).map((day) => (
-                    <div key={day} className="relative">
-                      {/* Timeline Day Title */}
-                      <div className="absolute -left-12 top-1.5 hidden sm:flex items-center justify-center w-8 h-8 rounded-full bg-slate-950 border-2 border-purple-500 text-purple-400 shadow-lg shadow-purple-500/10">
-                        <ChevronRight size={16} />
+                    {channel.avatarUrl ? (
+                      <img
+                        src={channel.avatarUrl}
+                        alt={channel.name}
+                        className="spotify-avatar-small border border-slate-800"
+                      />
+                    ) : (
+                      <div className="spotify-avatar-small bg-green-500/10 border border-green-500/20 text-[#1DB954] flex items-center justify-center font-bold text-xs">
+                        {channel.name.charAt(0).toUpperCase()}
                       </div>
-                      
-                      <div className="mb-6 flex items-center gap-3">
-                        <h2 className="text-xl font-extrabold text-gradient-cyan tracking-tight">
-                          {day}
-                        </h2>
-                        <span className="text-[10px] font-bold text-slate-500 bg-slate-900 border border-slate-800 px-2 py-0.5 rounded-full">
-                          {groupedSummaries[day].length} {groupedSummaries[day].length === 1 ? 'vídeo' : 'vídeos'}
-                        </span>
-                      </div>
+                    )}
+                    <div className="min-w-0">
+                      <p className="text-sm font-bold text-white truncate">{channel.name}</p>
+                      <p className="text-xs text-slate-400 truncate">Canal Monitorado</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </aside>
 
-                      {/* Video summaries for this day */}
-                      <div className="space-y-6">
-                        {groupedSummaries[day].map((summary) => (
-                          <VideoCard key={summary.videoId} summary={summary} />
-                        ))}
+        {/* Main Content Area (Middle Pane) */}
+        <main className="spotify-main-content">
+          {isLoading ? (
+            <div className="flex-1 flex flex-col justify-center items-center text-slate-400 gap-4">
+              <RotateCw className="animate-spin text-[#1DB954]" size={36} />
+              <p className="text-sm font-medium">Sincronizando com o servidor...</p>
+            </div>
+          ) : (
+            <div className="flex-1 flex flex-col">
+              
+              {/* Conditional Content Header */}
+              {activeTab === 'feed' && (
+                <div className="mb-6">
+                  {/* Stats pills */}
+                  <Stats
+                    channelsCount={channels.length}
+                    summariesCount={summaries.length}
+                    timeSaved={totalTimeSaved}
+                    scheduleHour={settings.scheduleHour}
+                  />
+
+                  {/* Header greetings */}
+                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mt-2 border-b border-white/5 pb-5">
+                    <div>
+                      <h2 className="text-3xl font-extrabold text-white flex items-center gap-2">
+                        {activeFilterName ? `Mix de ${activeFilterName}` : 'Seu Morning Mix'}
+                        <Sparkles size={20} className="text-[#1DB954] animate-pulse" />
+                      </h2>
+                      <p className="text-xs text-slate-400 mt-1">
+                        {activeFilterName 
+                          ? `Exibindo resumos executivos focados em ${activeFilterName}.`
+                          : 'Seu briefing diário compilado a partir de inteligência artificial matinal.'}
+                      </p>
+                    </div>
+
+                    {/* Filter reset button if active */}
+                    {activeChannelFilter && (
+                      <button
+                        onClick={() => setActiveChannelFilter(null)}
+                        className="btn-spotify-secondary flex items-center gap-1.5 text-xs"
+                      >
+                        <XCircle size={14} />
+                        <span>Ver Todos os Canais</span>
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Render dynamic tabs */}
+              {activeTab === 'feed' && (
+                <div className="flex-1 overflow-y-auto pr-1">
+                  {filteredSummaries.length === 0 ? (
+                    <div className="flex-1 flex flex-col items-center justify-center py-20 text-center">
+                      <div className="p-5 bg-white/5 rounded-full border border-white/10 text-slate-400 mb-4">
+                        <Coffee size={44} />
+                      </div>
+                      <h4 className="font-extrabold text-lg text-slate-200">Sua mesa matinal está limpa!</h4>
+                      <p className="text-xs text-slate-400 max-w-sm mx-auto mt-2 leading-relaxed">
+                        Nenhum briefing disponível no momento. 
+                        Cadastre canais e sua chave de API e clique em **Sincronizar Canais** no painel do player inferior para decolar!
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="space-y-8">
+                      {Object.keys(groupedSummaries).map(day => (
+                        <div key={day}>
+                          {/* Daily Timeline Label */}
+                          <div className="mb-4 flex items-center gap-2 border-b border-white/5 pb-2">
+                            <span className="w-2 h-2 rounded-full bg-[#1DB954]" />
+                            <h3 className="text-sm font-extrabold tracking-widest text-[#1DB954] uppercase">
+                              {day}
+                            </h3>
+                          </div>
+
+                          {/* Render Video cards */}
+                          <div className="space-y-4">
+                            {groupedSummaries[day].map(summary => (
+                              <VideoCard key={summary.videoId} summary={summary} />
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {activeTab === 'channels' && (
+                <div className="animate-fade-in flex-1 overflow-y-auto">
+                  <ChannelManager
+                    channels={channels}
+                    onAddChannel={handleAddChannel}
+                    onRemoveChannel={handleRemoveChannel}
+                  />
+                </div>
+              )}
+
+              {activeTab === 'settings' && (
+                <div className="animate-fade-in flex-1 overflow-y-auto">
+                  {/* Secure alert if env or local key missing */}
+                  {!settings.geminiApiKey && (
+                    <div className="mb-6 p-4 bg-yellow-500/10 border border-yellow-500/25 text-yellow-300 rounded-lg flex items-start gap-3">
+                      <Info className="shrink-0 mt-0.5 text-yellow-400" size={18} />
+                      <div>
+                        <h4 className="font-bold text-sm">Chave de API do Gemini Ausente!</h4>
+                        <p className="text-xs text-yellow-300/80 mt-1 leading-relaxed">
+                          Para que o agente possa gerar resumos matinais de IA, configure sua chave do Gemini abaixo ou nas variáveis de ambiente do seu servidor na nuvem.
+                        </p>
                       </div>
                     </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
+                  )}
 
-          {/* Control Center Tab: Channels and settings */}
-          {activeTab === 'control' && (
-            <div className="space-y-6 animate-fade-in">
-              {/* Warnings if API key is missing */}
-              {!settings.geminiApiKey && (
-                <div className="p-4 glass-panel border-yellow-500/20 bg-yellow-950/10 text-yellow-300 flex items-start gap-3">
-                  <Info className="shrink-0 mt-0.5 text-yellow-400" size={18} />
-                  <div>
-                    <h4 className="font-bold text-sm">Chave de API do Gemini Ausente!</h4>
-                    <p className="text-xs text-yellow-400/90 mt-1 leading-relaxed">
-                      Para que o agente de Inteligência Artificial resuma os vídeos, você precisa colar sua chave do Gemini nas configurações abaixo. 
-                      Sem a chave, a sincronização de feeds falhará ao tentar sintetizar as transcrições.
-                    </p>
-                  </div>
+                  <Settings
+                    settings={settings}
+                    onSaveSettings={handleSaveSettings}
+                  />
                 </div>
               )}
 
-              {/* Channel subscriptions manager */}
-              <ChannelManager
-                channels={channels}
-                onAddChannel={handleAddChannel}
-                onRemoveChannel={handleRemoveChannel}
-              />
-
-              {/* Gemini AI & Cron preferences */}
-              <Settings
-                settings={settings}
-                onSaveSettings={handleSaveSettings}
-              />
             </div>
           )}
-        </>
-      )}
+        </main>
 
-      {/* Simple Footer */}
-      <footer className="mt-16 border-t border-slate-800/80 pt-6 text-center text-xs text-slate-500 flex flex-col sm:flex-row items-center justify-between gap-3">
-        <p>© 2026 Morning Brew YouTube Summary Agent.</p>
-        <div className="flex items-center gap-1">
-          <span>Feito com</span>
-          <Sparkles size={12} className="text-purple-400 animate-pulse" />
-          <span>usando Gemini 2.5 Flash</span>
+      </div>
+
+      {/* Spotify Bottom Player Bar ("Now Playing Bar") */}
+      <footer className="spotify-player-bar">
+        
+        {/* Left Side: Track Cover (Latest Video Details) */}
+        <div className="spotify-player-track">
+          {latestSummary ? (
+            <>
+              {latestSummary.thumbnailUrl ? (
+                <a href={latestSummary.videoUrl} target="_blank" rel="noopener noreferrer">
+                  <img
+                    src={latestSummary.thumbnailUrl}
+                    alt={latestSummary.videoTitle}
+                    className="spotify-player-track-img hover:opacity-80 transition-opacity border border-white/5"
+                  />
+                </a>
+              ) : (
+                <div className="spotify-player-track-img bg-slate-800" />
+              )}
+              <div className="min-w-0">
+                <h4 className="spotify-player-track-title hover:text-[#1DB954] cursor-pointer" title={latestSummary.videoTitle}>
+                  <a href={latestSummary.videoUrl} target="_blank" rel="noopener noreferrer">
+                    {latestSummary.videoTitle}
+                  </a>
+                </h4>
+                <p className="spotify-player-track-channel">{latestSummary.channelName}</p>
+              </div>
+            </>
+          ) : (
+            <div className="flex items-center gap-3">
+              <div className="spotify-player-track-img bg-slate-800 flex items-center justify-center text-slate-500">
+                <Coffee size={20} />
+              </div>
+              <div>
+                <h4 className="spotify-player-track-title">Nenhum vídeo</h4>
+                <p className="spotify-player-track-channel">Aguardando sincronização</p>
+              </div>
+            </div>
+          )}
         </div>
+
+        {/* Center: Playback Controls (Sync Trigger & Progress timeline) */}
+        <div className="spotify-player-controls">
+          <div className="spotify-player-controls-buttons">
+            <button
+              onClick={handleTriggerSync}
+              disabled={isSyncing || isLoading}
+              className={`spotify-player-controls-play-btn ${isSyncing ? 'syncing' : ''}`}
+              title={isSyncing ? 'Agente executando...' : 'Sincronizar feeds agora'}
+              id="sync-now-btn"
+            >
+              {isSyncing ? (
+                <RotateCw className="animate-spin text-black" size={18} />
+              ) : (
+                <Play className="fill-black text-black translate-x-0.5" size={18} />
+              )}
+            </button>
+          </div>
+
+          <div className="spotify-player-progress">
+            <span className="spotify-player-time">
+              {isSyncing ? '07:00' : '00:00'}
+            </span>
+            
+            {/* Styled progress bar */}
+            <div className="spotify-player-progress-bar">
+              <div 
+                className={`spotify-player-progress-fill ${isSyncing ? 'active' : ''}`} 
+                style={{ width: isSyncing ? '70%' : '100%' }}
+              />
+            </div>
+            
+            <span className="spotify-player-time text-[10px]">
+              {isSyncing ? 'Sincronizando...' : 'Tudo Atualizado!'}
+            </span>
+          </div>
+        </div>
+
+        {/* Right side: Utilities (Stats shortcuts & Options) */}
+        <div className="spotify-player-actions">
+          {latestSummary && (
+            <div className="hidden lg:flex items-center gap-1 bg-[#1DB954]/10 border border-[#1DB954]/20 text-[#1DB954] font-bold text-[10px] px-2.5 py-1 rounded-full uppercase tracking-wider">
+              <Clock size={10} className="mr-0.5 animate-pulse" />
+              <span>Poupados: {totalTimeSaved} Minutos</span>
+            </div>
+          )}
+
+          <button
+            onClick={() => setActiveTab('settings')}
+            className={`p-2 text-slate-400 hover:text-white rounded-full transition-colors ${
+              activeTab === 'settings' ? 'text-white bg-white/5' : ''
+            }`}
+            title="Ir para Ajustes da IA"
+          >
+            <SettingsIcon size={16} />
+          </button>
+        </div>
+
       </footer>
+
     </div>
   );
 }

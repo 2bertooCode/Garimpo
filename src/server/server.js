@@ -34,7 +34,11 @@ app.use((req, res, next) => {
 app.get('/api/settings', (req, res) => {
   try {
     const settings = db.getSettings();
-    res.json(settings);
+    const hasEnvKey = !!process.env.GEMINI_API_KEY;
+    res.json({
+      ...settings,
+      geminiApiKey: settings.geminiApiKey || (hasEnvKey ? '•••••••••••• (Configurada via Servidor)' : '')
+    });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

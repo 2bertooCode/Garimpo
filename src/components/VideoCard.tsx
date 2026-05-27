@@ -45,9 +45,7 @@ const renderMarkdownToHtml = (markdownText: string): string => {
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;');
 
-  // Re-allow specific safely parsed tags below
-  
-  // Parse Headings: ### Title
+  // Parse Headings: ### Title -> Spotify Green Subsections
   html = html.replace(/^###\s+(.*)$/gm, '<h3>$1</h3>');
   
   // Parse Bold: **text**
@@ -58,8 +56,6 @@ const renderMarkdownToHtml = (markdownText: string): string => {
   let inList = false;
   const processedLines = lines.map(line => {
     const trimmed = line.trim();
-    
-    // Check if bullet point
     const bulletMatch = trimmed.match(/^-\s+(.*)/) || trimmed.match(/^\*\s+(.*)/);
     
     if (bulletMatch) {
@@ -68,7 +64,7 @@ const renderMarkdownToHtml = (markdownText: string): string => {
         inList = true;
         output += '<ul class="list-disc pl-5 my-2">';
       }
-      output += `<li class="text-slate-300 text-sm mb-2">${bulletMatch[1]}</li>`;
+      output += `<li class="text-slate-300 text-sm mb-2 leading-relaxed">${bulletMatch[1]}</li>`;
       return output;
     } else {
       let output = '';
@@ -77,12 +73,10 @@ const renderMarkdownToHtml = (markdownText: string): string => {
         output += '</ul>';
       }
       
-      // Keep headers clean or transform regular lines into paragraphs
       if (trimmed.startsWith('&lt;h3') || trimmed.startsWith('<h3>')) {
-        // Re-inject safe heading tags
         return output + trimmed.replace(/&lt;h3&gt;/g, '<h3>').replace(/&lt;\/h3&gt;/g, '</h3>');
       } else if (trimmed === '---' || trimmed === '***') {
-        return output + '<hr class="my-4 border-slate-800" />';
+        return output + '<hr class="my-4 border-slate-700/30" />';
       } else if (trimmed.length > 0) {
         return output + `<p class="text-slate-300 text-sm mb-3 leading-relaxed">${trimmed}</p>`;
       }
@@ -101,14 +95,14 @@ export const VideoCard: React.FC<VideoCardProps> = ({ summary }) => {
   const [isOpen, setIsOpen] = useState(false);
 
   return (
-    <div className="glass-panel glass-panel-hover overflow-hidden flex flex-col md:flex-row mb-6 border border-slate-800/80">
-      {/* Left side: Thumbnail preview */}
-      <div className="relative w-full md:w-80 shrink-0 aspect-video md:aspect-auto md:min-h-[200px] bg-slate-950 group">
+    <div className="spotify-card flex flex-col md:flex-row mb-4 border border-transparent hover:border-slate-800 transition-all duration-300">
+      {/* Left side: Album Cover Style Thumbnail */}
+      <div className="relative w-full md:w-56 shrink-0 aspect-video md:aspect-auto md:h-36 bg-black rounded-md overflow-hidden group">
         {summary.thumbnailUrl ? (
           <img
             src={summary.thumbnailUrl}
             alt={summary.videoTitle}
-            className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-500"
+            className="w-full h-full object-cover group-hover:scale-[1.05] transition-transform duration-500"
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center text-slate-600 bg-slate-900">
@@ -117,34 +111,34 @@ export const VideoCard: React.FC<VideoCardProps> = ({ summary }) => {
         )}
         
         {/* Time Saved Badge Overlay */}
-        <div className="absolute top-3 left-3 bg-purple-600/90 backdrop-blur border border-purple-400/20 text-white text-xs font-bold px-2.5 py-1 rounded-full shadow-lg flex items-center gap-1">
-          <Clock size={12} />
-          <span>⚡ Poupou {summary.timeSavedMinutes} min</span>
+        <div className="absolute top-2 left-2 bg-[#1DB954] text-black text-[10px] font-bold px-2 py-0.5 rounded-full shadow-lg flex items-center gap-1">
+          <Clock size={10} />
+          <span>⚡ Poupou {summary.timeSavedMinutes}m</span>
         </div>
         
-        {/* Overlay Hover Icon to Original Video */}
+        {/* Overlay Hover to Original Video */}
         <a
           href={summary.videoUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className="absolute inset-0 bg-slate-950/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity duration-300 text-white"
+          className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity duration-300 text-white"
         >
-          <div className="p-3 bg-slate-900/80 backdrop-blur border border-white/10 rounded-full flex items-center gap-1.5 shadow-xl hover:scale-105 transition-transform">
-            <span className="text-xs font-bold">Assistir Original</span>
-            <ExternalLink size={14} />
+          <div className="p-2 bg-black/80 backdrop-blur rounded-full flex items-center gap-1 shadow-lg hover:scale-105 transition-transform text-xs font-bold">
+            <span>Abrir original</span>
+            <ExternalLink size={12} />
           </div>
         </a>
       </div>
 
-      {/* Right side: Summary Details */}
-      <div className="flex-1 p-5 md:p-6 flex flex-col justify-between">
+      {/* Right side: Track Info and Summary */}
+      <div className="flex-1 mt-4 md:mt-0 md:pl-5 flex flex-col justify-between min-w-0">
         <div>
-          {/* Header Info: Channel and date */}
-          <div className="flex items-center gap-2 mb-2 text-xs text-slate-400">
-            <span className="font-semibold text-slate-300 bg-slate-800 border border-slate-700/50 px-2 py-0.5 rounded-md">
+          {/* Header Info */}
+          <div className="flex items-center gap-2 mb-1.5 text-xs text-slate-400">
+            <span className="font-bold text-white bg-white/10 hover:bg-white/20 transition-colors px-2 py-0.5 rounded-md cursor-pointer">
               {summary.channelName}
             </span>
-            <span className="text-slate-600">•</span>
+            <span className="text-slate-700">•</span>
             <div className="flex items-center gap-1 text-slate-400">
               <Calendar size={12} />
               <span>{formatDate(summary.publishedAt)}</span>
@@ -152,16 +146,16 @@ export const VideoCard: React.FC<VideoCardProps> = ({ summary }) => {
           </div>
 
           {/* Video Title */}
-          <h3 className="text-lg font-bold text-slate-100 mb-3 hover:text-cyan-400 transition-colors leading-tight">
+          <h3 className="text-base font-bold text-white truncate hover:text-[#1DB954] transition-colors leading-tight pr-6" title={summary.videoTitle}>
             <a href={summary.videoUrl} target="_blank" rel="noopener noreferrer">
               {summary.videoTitle}
             </a>
           </h3>
 
-          {/* Briefing Accordion Content */}
+          {/* Lyrics-Style Accordion Briefing Content */}
           <div 
             className={`transition-all duration-300 ease-in-out overflow-hidden ${
-              isOpen ? 'max-h-[1500px] opacity-100 mt-4 pt-4 border-t border-slate-800' : 'max-h-0 opacity-0'
+              isOpen ? 'max-h-[1500px] opacity-100 mt-4 p-4 bg-[#282828] border border-slate-700/30 rounded-lg' : 'max-h-0 opacity-0'
             }`}
           >
             <div 
@@ -172,28 +166,28 @@ export const VideoCard: React.FC<VideoCardProps> = ({ summary }) => {
         </div>
 
         {/* Action Toggle Button */}
-        <div className="mt-4 pt-3 flex items-center justify-between border-t border-slate-800/40">
+        <div className="mt-3 pt-2 flex items-center justify-between border-t border-white/5">
           <a
             href={summary.videoUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-xs text-slate-400 hover:text-slate-200 inline-flex items-center gap-1 transition-colors"
+            className="text-xs text-slate-400 hover:text-white inline-flex items-center gap-1 transition-colors"
           >
-            Ver no YouTube
-            <ExternalLink size={12} />
+            Assistir no YouTube
+            <ExternalLink size={11} />
           </a>
           
           <button
             onClick={() => setIsOpen(!isOpen)}
-            className={`text-xs font-bold px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-all duration-200 ${
+            className={`text-xs font-bold px-3 py-1 rounded-full flex items-center gap-1 transition-all duration-200 ${
               isOpen 
-                ? 'bg-slate-800 text-slate-200 border border-slate-700' 
-                : 'bg-purple-500/10 border border-purple-500/20 text-purple-300 hover:bg-purple-500/20'
+                ? 'bg-white/10 text-white border border-white/20' 
+                : 'bg-[#1DB954]/10 border border-[#1DB954]/20 text-[#1DB954] hover:bg-[#1DB954]/20'
             }`}
             id={`toggle-${summary.videoId}`}
           >
             <span>{isOpen ? 'Esconder Briefing' : 'Ver Briefing de IA'}</span>
-            {isOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+            {isOpen ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
           </button>
         </div>
       </div>
