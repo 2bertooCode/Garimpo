@@ -1,7 +1,3 @@
-@import 'tailwindcss/base';
-@import 'tailwindcss/components';
-@import 'tailwindcss/utilities';
-
 /* Custom Theme Variables & Styles */
 :root {
   --bg-deep-space: #0B0F19;
