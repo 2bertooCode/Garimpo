@@ -167,4 +167,27 @@ app.listen(PORT, () => {
   } catch (err) {
     console.error('Failed to initialize scheduler:', err);
   }
+
+  // Automatic startup sync check in the background (safety net for cold starts)
+  setTimeout(async () => {
+    console.log('Running startup sync check...');
+    try {
+      const summaries = db.getSummaries();
+      const lastSync = summaries.length > 0 && summaries[0].syncedAt ? new Date(summaries[0].syncedAt) : null;
+      const twelveHoursAgo = new Date(Date.now() - 12 * 60 * 60 * 1000);
+      
+      if (!lastSync || lastSync < twelveHoursAgo) {
+        console.log('Last sync was more than 12h ago or never. Triggering background startup sync...');
+        syncAllChannels().then(result => {
+          console.log('Background startup sync finished:', result.message);
+        }).catch(err => {
+          console.error('Background startup sync failed:', err);
+        });
+      } else {
+        console.log('Recent sync found. Startup sync skipped.');
+      }
+    } catch (err) {
+      console.error('Failed to run startup sync check:', err);
+    }
+  }, 10000); // Wait 10s after startup to let server settle
 });
