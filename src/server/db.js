@@ -13,7 +13,36 @@ const DEFAULT_DB = {
     scheduleHour: '07:00',
     promptCustomization: 'Gere um resumo executivo técnico com pontos principais, conceitos citados e conclusões acionáveis em português do Brasil.'
   },
-  channels: [],
+  channels: [
+    {
+      "id": "UCkCnraWwlnBw1_i7C9-3p0w",
+      "name": "Dive Club 🤿",
+      "handle": "@joindiveclub",
+      "avatarUrl": "https://yt3.googleusercontent.com/6Beddd2tP_Ykupy7GlnNsifzmZjzqZpV2hZAbqut0ovcYBraoyxjcuYeBPcfq1TcDeEcuXO5Kw=s900-c-k-c0x00ffffff-no-rj",
+      "addedAt": "2026-05-27T00:00:00.000Z"
+    },
+    {
+      "id": "UC-b3c7kxa5vU-bnmaROgvog",
+      "name": "The Futur",
+      "handle": "@thefutur",
+      "avatarUrl": "https://yt3.googleusercontent.com/ytc/AIdro_nMoHSipNGFS_Uw9P3Rp69VUaDKBIqPY3-rmCJdHQwXTpw=s900-c-k-c0x00ffffff-no-rj",
+      "addedAt": "2026-05-27T00:00:00.000Z"
+    },
+    {
+      "id": "UCVyRiMvfUNMA1UPlDPzG5Ow",
+      "name": "DesignCourse",
+      "handle": "@DesignCourse",
+      "avatarUrl": "https://yt3.googleusercontent.com/ieTt1p2twEf4cz0vhOtB-0UXPN4vk9-8HM8OqxcX8sRU3nm5Di8sohyFOvxR3M-pN_bo4rnL=s900-c-k-c0x00ffffff-no-rj",
+      "addedAt": "2026-05-27T00:00:00.000Z"
+    },
+    {
+      "id": "UCv9xE0MckLgW9XUn1EMx04g",
+      "name": "Human Academy",
+      "handle": "@HumanAcademy_AI",
+      "avatarUrl": "https://yt3.googleusercontent.com/89B7baK9K5cEg4TRrZ_qjECa0hM1YVsavGcoEoCRroYsphC-wnqjqtPbDOs9r-Mww9EAc3y_Yg=s900-c-k-c0x00ffffff-no-rj",
+      "addedAt": "2026-05-27T00:00:00.000Z"
+    }
+  ],
   summaries: []
 };
 
